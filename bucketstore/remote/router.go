@@ -83,8 +83,10 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 	}
 	for i := 0 ; i<len(uuids) ; i++ {
 	
-		if b.postick >= len(uuids) { b.postick = 0 }
-		uuid := uuids[b.postick]
+		postick := b.postick
+		if postick >= len(uuids) { postick = 0 }
+		uuid := uuids[postick]
+		b.postick = postick+1
 	
 		if lc := b.locals[uuid] ; lc!=nil {
 			lc.Handler(ctx)

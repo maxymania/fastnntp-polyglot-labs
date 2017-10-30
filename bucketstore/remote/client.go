@@ -36,9 +36,16 @@ type HttpClient interface{
 	DoDeadline(req *fasthttp.Request, resp *fasthttp.Response, deadline time.Time) error
 }
 
+func required(req *fasthttp.Request) {
+	req.SetHost("unknown")
+}
+
 type Client struct{
 	client HttpClient
 	uuid   []byte
+}
+func NewClient(c HttpClient, uuid []byte) *Client {
+	return &Client{c,uuid}
 }
 
 func (c *Client) setUrl(req *fasthttp.Request, id []byte, date []byte) {
@@ -71,6 +78,7 @@ func (c *Client) Put(id, overv, head, body []byte, expire time.Time) error {
 	req.AppendBody(head)
 	req.AppendBody(body)
 	
+	required(req)
 	err := c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
 	if err!=nil { return err }
@@ -102,6 +110,7 @@ func (c *Client) Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,err
 	c.setUrl(req,id,buf[:])
 	req.Header.SetMethod("GET")
 	
+	required(req)
 	err = c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
 	if err!=nil { return }
@@ -121,6 +130,8 @@ func (c *Client) Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,err
 	rdata = rdata[headl:]
 	if body!=nil { *body = bufferex.NewBinary(rdata) }
 	
+	ok = true
+	
 	return
 }
 func (c *Client) Expire(expire time.Time) error {
@@ -131,6 +142,7 @@ func (c *Client) Expire(expire time.Time) error {
 	req.Header.SetMethod("DELETE")
 	req.SetRequestURI(fmt.Sprintf("/%s/%s",c.uuid,expire.AppendFormat(buf[:0],URLDate)))
 	
+	required(req)
 	err := c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
 	if err!=nil { return err }
@@ -149,6 +161,7 @@ func (c *Client) FreeStorage() (int64,error) {
 	req.Header.SetMethod("HEAD")
 	req.SetRequestURI(fmt.Sprintf("/%s",c.uuid))
 	
+	required(req)
 	err := c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
 	if err!=nil { return 0,err }
@@ -163,6 +176,9 @@ func (c *Client) FreeStorage() (int64,error) {
 
 type MultiClient struct{
 	client HttpClient
+}
+func NewMultiClient(c HttpClient) *MultiClient {
+	return &MultiClient{c}
 }
 
 func (m *MultiClient) Submit(id, overv, head, body []byte, expire time.Time) (bucket bufferex.Binary,err error) {
@@ -185,6 +201,7 @@ func (m *MultiClient) Submit(id, overv, head, body []byte, expire time.Time) (bu
 	req.AppendBody(head)
 	req.AppendBody(body)
 	
+	required(req)
 	err = m.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
 	if err!=nil { return }
