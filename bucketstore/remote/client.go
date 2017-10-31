@@ -113,8 +113,6 @@ func (c *Client) Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,err
 	required(req)
 	err = c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
-	fmt.Println(err)
-	
 	if err!=nil { return }
 	
 	overl := binarix.Atoi(resp.Header.Peek("X-Over"))

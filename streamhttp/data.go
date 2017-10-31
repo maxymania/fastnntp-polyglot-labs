@@ -28,7 +28,6 @@ import "github.com/byte-mug/golibs/streamprotoc"
 import "net"
 import "time"
 import "github.com/xtaci/kcp-go"
-import "fmt"
 
 type Client struct{
 	Inner *streamprotoc.Client
@@ -61,11 +60,6 @@ func NewServer(hnd fasthttp.RequestHandler) *Server{
 	s.NewMessage = NewMessage
 	s.Handler    = NewHandler(hnd)
 	return s
-}
-func (s *Server) Handle(c net.Conn) {
-	fmt.Println("Start Connection")
-	s.Server.Handle(c)
-	fmt.Println("Quit Connection")
 }
 func (s *Server) Serve(l net.Listener){
 	for {
