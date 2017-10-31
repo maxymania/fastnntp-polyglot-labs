@@ -102,9 +102,9 @@ func (b *BucketShare) Handler(ctx *fasthttp.RequestCtx) {
 		defer bbody.Free()
 		if e!=nil { ctx.Error("Storage error "+e.Error(),fasthttp.StatusInternalServerError); return }
 		if !ok { ctx.Error("Not found",fasthttp.StatusNotFound); return }
-		ctx.Response.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(bover.Bytes())),numbuf[:]))
-		ctx.Response.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(bhead.Bytes())),numbuf[:]))
-		ctx.Response.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(bbody.Bytes())),numbuf[:]))
+		ctx.Response.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(bover.Bytes())),numbuf[:0]))
+		ctx.Response.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(bhead.Bytes())),numbuf[:0]))
+		ctx.Response.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(bbody.Bytes())),numbuf[:0]))
 		ctx.Write(bover.Bytes())
 		ctx.Write(bhead.Bytes())
 		ctx.Write(bbody.Bytes())
@@ -162,7 +162,7 @@ func (b *BucketShare) Handler(ctx *fasthttp.RequestCtx) {
 	if ctx.IsHead() {
 		lng := atomic.LoadInt64(&b.spcLeft)
 		ctx.SetStatusCode(fasthttp.StatusNoContent)
-		ctx.Response.Header.SetBytesV("X-Free-Storage",binarix.Itoa(lng,numbuf[:]))
+		ctx.Response.Header.SetBytesV("X-Free-Storage",binarix.Itoa(lng,numbuf[:0]))
 		ctx.SetStatusCode(fasthttp.StatusNoContent)
 		return
 	}

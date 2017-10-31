@@ -70,9 +70,9 @@ func (c *Client) Put(id, overv, head, body []byte, expire time.Time) error {
 	c.setUrl(req,id,expire.AppendFormat(buf[:0],URLDate))
 	req.Header.SetMethod("PUT")
 	
-	req.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(overv)),numbuf[:]))
-	req.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(head )),numbuf[:]))
-	req.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(body )),numbuf[:]))
+	req.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(overv)),numbuf[:0]))
+	req.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(head )),numbuf[:0]))
+	req.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(body )),numbuf[:0]))
 	
 	req.AppendBody(overv)
 	req.AppendBody(head)
@@ -113,11 +113,17 @@ func (c *Client) Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,err
 	required(req)
 	err = c.client.DoDeadline(req,resp,time.Now().Add(time.Second))
 	
+	fmt.Println(err)
+	
 	if err!=nil { return }
 	
 	overl := binarix.Atoi(resp.Header.Peek("X-Over"))
 	headl := binarix.Atoi(resp.Header.Peek("X-Head"))
 	bodyl := binarix.Atoi(resp.Header.Peek("X-Body"))
+	
+	if overv!=nil && overl==0 { return }
+	if head !=nil && headl==0 { return }
+	if body !=nil && bodyl==0 { return }
 	
 	rdata := resp.Body()
 	if int64(len(rdata))!=(overl+headl+bodyl) {
@@ -193,9 +199,9 @@ func (m *MultiClient) Submit(id, overv, head, body []byte, expire time.Time) (bu
 	
 	req.Header.SetMethod("POST")
 	
-	req.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(overv)),numbuf[:]))
-	req.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(head )),numbuf[:]))
-	req.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(body )),numbuf[:]))
+	req.Header.SetBytesV("X-Over",binarix.Itoa(int64(len(overv)),numbuf[:0]))
+	req.Header.SetBytesV("X-Head",binarix.Itoa(int64(len(head )),numbuf[:0]))
+	req.Header.SetBytesV("X-Body",binarix.Itoa(int64(len(body )),numbuf[:0]))
 	
 	req.AppendBody(overv)
 	req.AppendBody(head)
