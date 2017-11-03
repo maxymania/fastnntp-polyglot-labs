@@ -40,6 +40,14 @@ var PgDialect = &Dialect{
 	Date: "date",
 }
 
+// Microsoft SQL Server
+// (untested)
+var MsSqlDialect = &Dialect{
+	Binary: "varbinary",
+	Int64: "bigint",
+	Date: "date",
+}
+
 var createTables = template.Must(template.New("create").Parse(`
 	CREATE TABLE ngrpnumvalue (
 		ngrp  {{.Binary}},
