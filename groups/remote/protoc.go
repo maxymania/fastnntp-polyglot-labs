@@ -109,9 +109,9 @@ type GhaClient struct{
 
 func (g *GhaClient) AdmCreateGroup(group []byte) int {
 	req := fasthttp.AcquireRequest()
-	prep(req)
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI("/AdmCreateGroup/")
+	prep(req)
 	msgpack.NewEncoder(writer{req}).Encode(group)
 	err := g.Client.DoDeadline(req,resp,fasthttp.CoarseTimeNow().Add(time.Second*2))
 	if err!=nil { return 3 }
@@ -140,9 +140,9 @@ func (g *GhaClient) GetDown(group []byte) (int64, error) {
 }
 func (g *GhaClient) MoveDown(group []byte) (int64, error) {
 	req := fasthttp.AcquireRequest()
-	prep(req)
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI("/MoveDown/")
+	prep(req)
 	msgpack.NewEncoder(writer{req}).Encode(group)
 	err := g.Client.DoDeadline(req,resp,fasthttp.CoarseTimeNow().Add(time.Second*2))
 	if err!=nil { return 0,err }
@@ -156,9 +156,9 @@ func (g *GhaClient) MoveDown(group []byte) (int64, error) {
 }
 func (g *GhaClient) UpdateDown(group []byte, oldHigh, low, high, count int64) (bool, error) {
 	req := fasthttp.AcquireRequest()
-	prep(req)
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI("/UpdateDown/")
+	prep(req)
 	msgpack.NewEncoder(writer{req}).Encode(group,oldHigh, low, high, count)
 	err := g.Client.DoDeadline(req,resp,fasthttp.CoarseTimeNow().Add(time.Second*2))
 	if err!=nil { return false,err }
@@ -172,10 +172,11 @@ func (g *GhaClient) UpdateDown(group []byte, oldHigh, low, high, count int64) (b
 }
 func (g *GhaClient) GroupHeadInsert(groups [][]byte, buf []int64) ([]int64, error) {
 	req := fasthttp.AcquireRequest()
-	prep(req)
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI("/GroupHeadInsert/")
+	prep(req)
 	msgpack.NewEncoder(writer{req}).Encode(groups)
+	
 	err := g.Client.DoDeadline(req,resp,fasthttp.CoarseTimeNow().Add(time.Second*2))
 	if err!=nil { return nil,err }
 	
@@ -189,9 +190,9 @@ func (g *GhaClient) GroupHeadInsert(groups [][]byte, buf []int64) ([]int64, erro
 }
 func (g *GhaClient) GroupHeadRevert(groups [][]byte, nums []int64) error {
 	req := fasthttp.AcquireRequest()
-	prep(req)
 	resp := fasthttp.AcquireResponse()
 	req.SetRequestURI("/GroupHeadRevert/")
+	prep(req)
 	msgpack.NewEncoder(writer{req}).Encode(groups,nums)
 	err := g.Client.DoDeadline(req,resp,fasthttp.CoarseTimeNow().Add(time.Second*2))
 	if err!=nil { return err }
