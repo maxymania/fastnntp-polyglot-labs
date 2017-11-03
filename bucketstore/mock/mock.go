@@ -53,7 +53,7 @@ func (b Buckets) Submit(id, overv, head, body []byte, expire time.Time) (bucket 
 	size := int64(len(id)+len(overv)+len(head)+len(body))
 	var free int64
 	for _,bkt := range b {
-		if free,err = bkt.Store.FreeStorage(); err==nil && free>=size {
+		if free,err = bkt.Store.FreeStorage(); err==nil && free<=size {
 			continue
 		}
 		err = bkt.Store.Put(id,overv,head,body,expire)
