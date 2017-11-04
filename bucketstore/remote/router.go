@@ -57,6 +57,28 @@ func (b *BucketRouter) AddNode(names [][]byte,cli HttpClient) {
 		b.uuids = append(b.uuids,sn)
 	}
 }
+func (b *BucketRouter) AddNode2(names []string,cli HttpClient) {
+	b.remlock.Lock(); defer b.remlock.Unlock()
+	for _,sn := range names {
+		b.remotes[sn] = &Client{cli,[]byte(sn)}
+		b.uuids = append(b.uuids,sn)
+	}
+}
+func (b *BucketRouter) Remove2(names []string) {
+	b.remlock.Lock(); defer b.remlock.Unlock()
+	m := make(map[string]bool,len(names))
+	for _,name := range names {
+		m[name]=true
+		delete(b.remotes,name)
+	}
+	i := 0
+	for _,uuid := range b.uuids {
+		if m[uuid] { continue }
+		b.uuids[i] = uuid
+		i++
+	}
+	b.uuids = b.uuids[:i]
+}
 
 func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx) {
 	var idbuf [100]byte
