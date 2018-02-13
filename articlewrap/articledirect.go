@@ -29,7 +29,7 @@ import "github.com/maxymania/fastnntp-polyglot"
 import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore"
 import "github.com/maxymania/fastnntp-polyglot-labs/bufferex"
 import "github.com/maxymania/fastnntp-polyglot/policies"
-import "github.com/maxymania/fastnntp-polyglot/buffer"
+//import "github.com/maxymania/fastnntp-polyglot/buffer"
 
 func repool(bak, work *[]byte) {
 	if cap(*bak)<cap(*work) { *bak = *work }
@@ -75,7 +75,6 @@ func (adb *ArticleDirectBackend) ArticleDirectGet(id []byte, head, body bool) *n
 	}
 	if body {
 		obj.Bufs[1],obj.Body,e = zdecode(bbody.Bytes())
-		buffer.Put(obj.Bufs[0])
 		if e!=nil { return nil }
 	}
 	return obj
@@ -134,7 +133,6 @@ func (adb *ArticleDirectBackend) ArticleGroupGet (group []byte, num int64, head,
 	}
 	if body {
 		obj.Bufs[1],obj.Body,e = zdecode(bbody.Bytes())
-		buffer.Put(obj.Bufs[0])
 		if e!=nil { return nil,nil }
 	}
 	return append(id_buf[:0],msgid.Bytes()...),obj
