@@ -185,8 +185,8 @@ func (b *Base) QueryGroupList(group []byte, first, last int64, targ func(num int
 	return nil
 }
 func (b *Base) Expire(expire time.Time) error {
-	_,e1 := b.DB.Exec(`DELETE FROM ngrpnumvalue n WHERE n.expir >= $1 ;`,expire)
-	_,e2 := b.DB.Exec(`DELETE FROM msgidbkt m WHERE m.expir >= $1 ;`,expire)
+	_,e1 := b.DB.Exec(`DELETE FROM ngrpnumvalue n WHERE n.expir <= $1 ;`,expire)
+	_,e2 := b.DB.Exec(`DELETE FROM msgidbkt m WHERE m.expir <= $1 ;`,expire)
 	if e1==nil { e1=e2 }
 	return e1
 }
