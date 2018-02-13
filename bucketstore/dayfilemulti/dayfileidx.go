@@ -137,14 +137,12 @@ func (d *DayfileIndex) delete(dayid DayID) {
 func (d *DayfileIndex) Put(id, overv, head, body []byte, expire time.Time) error {
 	var dayid DayID
 	expire.UTC().AppendFormat(dayid[:0],dayFile_Fmt)
-	copy(dayid[:dfDate],dfNumbConst)
-	f,e := d.open(dayid)
-	if e!=nil { return e }
-	defer f.Close()
+	copy(dayid[dfDate:],dfNumbConst)
+	
 	chunk_all := int64(len(overv))+int64(len(head))+int64(len(body))
 	
 	var e2 error
-	e = d.db.Batch(func(tx *bolt.Tx) error {
+	e := d.db.Batch(func(tx *bolt.Tx) error {
 		var ibuf [8]byte
 		fSz,err := tx.CreateBucketIfNotExists(bktFileSize)
 		if err!=nil { return err }
@@ -168,6 +166,10 @@ func (d *DayfileIndex) Put(id, overv, head, body []byte, expire time.Time) error
 		}
 		
 		pos := Position{struct{}{},dayid,lng,len(overv),len(head),len(body)}
+		
+		f,e := d.open(dayid)
+		if e!=nil { return e }
+		defer f.Close()
 		
 		_,e2 = f.WriteAt(overv,lng)
 		if e2!=nil { return nil }
@@ -236,7 +238,7 @@ func (d *DayfileIndex) Get(id []byte, overv, head, body *bufferex.Binary) (ok bo
 func (d *DayfileIndex) Expire(expire time.Time) error {
 	var dayid DayID
 	expire.UTC().AppendFormat(dayid[:0],dayFile_Fmt)
-	copy(dayid[:dfDate],dfNumbConstLast)
+	copy(dayid[dfDate:],dfNumbConstLast)
 	
 	// Step 1: delete all dayfiles until (including) expire!
 	e := d.db.View(func(tx *bolt.Tx) error {
