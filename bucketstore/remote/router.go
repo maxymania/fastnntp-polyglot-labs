@@ -111,7 +111,8 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 		b.postick = postick+1
 	
 		if lc := b.locals[uuid] ; lc!=nil {
-			lc.Handler(ctx)
+			
+			/* Check Length. We must not exceed the available storage space. */
 			lng := atomic.LoadInt64(&lc.spcLeft)
 			if lng<(overl+headl+bodyl) {
 				continue

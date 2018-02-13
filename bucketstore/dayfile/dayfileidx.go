@@ -44,8 +44,8 @@ type DayID [8]byte
 var bE = binary.BigEndian
 
 var bktFileSize = []byte("filesize")
-var bktIndex = []byte("filesize")
-var bktIndexRel = []byte("filsizrel")
+var bktIndex = []byte("index")
+var bktIndexRel = []byte("indexrel")
 
 type Position struct{
 	_msgpack struct{} `msgpack:",asArray"`
