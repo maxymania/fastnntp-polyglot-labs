@@ -204,8 +204,10 @@ func (d *DayfileIndex) Expire(expire time.Time) error {
 		fSz := tx.Bucket(bktFileSize)
 		if fSz==nil { return nil }
 		cur := fSz.Cursor()
+		var daykey DayID
 		for key,_ := cur.First() ; len(key)>0 && bytes.Compare(key,dayid[:])<=0 ; key,_ = cur.Next() {
-			d.delete(dayid)
+			copy(daykey[:],key)
+			d.delete(daykey)
 		}
 		return nil
 	})
