@@ -165,11 +165,16 @@ func (adb *ArticleDirectBackend) ArticleGroupOverview(group []byte, first, last 
 		bucket.Free()
 		msgid.Free()
 		
-		if e==nil && ok { e = zunmarshal(xover.Bytes(),read...) }
+		if e==nil && ok {
+			/*
+			 * Reuse the Buffers from previous iterations,
+			 * or safe Buffers from the current iteration, if those are bigger.
+			 */
+			repoolObj(&bak,&obj)
+			e = zunmarshal(xover.Bytes(),read...)
+		}
 		
 		xover.Free()
-		
-		repoolObj(&bak,&obj)
 		
 		if e!=nil || !ok { return }
 		targ(num,&obj)
