@@ -55,7 +55,7 @@ func (d DayID) overfl() bool { return string(d[dfNumb:])==dfNumbConst }
  * The digit space is [0-9a-z]
  */
 func (d DayID) incr() DayID{
-	for i := len(d)-1; i>=dfNumb; i-- {
+	for i := len(d)-1; i>=dfDate; i-- {
 		b := d[i]+1
 		switch b{
 		case '9'+1: b = 'a' /* After '9' comes 'a' */
