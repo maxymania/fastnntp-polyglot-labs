@@ -204,7 +204,7 @@ func (adb *ArticleDirectBackend) ArticlePostingPost(headp *posting.HeadInfo, bod
 	
 	overv = decision.CompressXover.Def()(policies.DEFLATE{},overv)
 	head := decision.CompressHeader.Def()(policies.DEFLATE{},headp.RAW)
-	body  = decision.CompressHeader.Def()(policies.DEFLATE{},body)
+	body  = decision.CompressBody.Def()(policies.DEFLATE{},body)
 	
 	var bucket bufferex.Binary
 	bucket,err = adb.Store.Submit(headp.MessageId, overv, head, body, decision.ExpireAt)
