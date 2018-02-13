@@ -177,6 +177,7 @@ func (d *DayfileIndex) Get(id []byte, overv, head, body *bufferex.Binary) (ok bo
 	var f *file.File
 	f,e = d.open(pos.Day)
 	if e!=nil { ok = false ; return }
+	defer f.Close()
 	if overv!=nil {
 		*overv = bufferex.AllocBinary(pos.Over)
 		_,e = f.ReadAt(overv.Bytes(),pos.Offset)
