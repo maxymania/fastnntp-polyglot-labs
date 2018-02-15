@@ -36,6 +36,10 @@ var EDiskFailure = errors.New("Disk Failure")
 var EOutOfStorage = errors.New("Out of Storage")
 var EBadRequest = errors.New("Bad Request")
 
+// Failure handling
+
+var ETemporaryFailure = errors.New("Temporary Failure")
+
 type BucketStore interface{
 	Put(id, overv, head, body []byte, expire time.Time) error
 	Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,e error)

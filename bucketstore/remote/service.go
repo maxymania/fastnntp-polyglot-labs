@@ -34,6 +34,10 @@ import "github.com/maxymania/fastnntp-polyglot/buffer"
 import "encoding/base64"
 import "sync/atomic"
 
+const (
+	statusTemporaryFailure = 900+iota
+)
+
 var codec = base64.RawURLEncoding
 
 func decode(buf []byte,targ []byte) (bufferex.Binary, error){
@@ -134,6 +138,10 @@ func (b *BucketShare) Handler(ctx *fasthttp.RequestCtx) {
 		err = b.Store.Put(id.Bytes(), rdata[:overl], rdata[overl:bodyf], rdata[bodyf:], expire)
 		if err==bucketstore.EExists {
 			ctx.Error("Object Already Exists",fasthttp.StatusConflict)
+			return
+		}
+		if err==bucketstore.ETemporaryFailure {
+			ctx.Error("Temporary Failure",statusTemporaryFailure)
 			return
 		}
 		if err!=nil {

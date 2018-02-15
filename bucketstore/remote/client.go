@@ -92,6 +92,7 @@ func (c *Client) Put(id, overv, head, body []byte, expire time.Time) error {
 	case fasthttp.StatusConflict:            return bucketstore.EExists
 	case fasthttp.StatusInsufficientStorage: return bucketstore.EOutOfStorage
 	case fasthttp.StatusNotFound:            return bucketstore.ENoBucket
+	case statusTemporaryFailure:             return bucketstore.ETemporaryFailure
 	default:                                 return bucketstore.EDiskFailure
 	}
 	
@@ -222,6 +223,7 @@ func (m *MultiClient) Submit(id, overv, head, body []byte, expire time.Time) (bu
 	case fasthttp.StatusConflict:            err = bucketstore.EExists
 	case fasthttp.StatusInsufficientStorage: err = bucketstore.EOutOfStorage
 	case fasthttp.StatusNotFound:            err = bucketstore.ENoBucket
+	case statusTemporaryFailure:             err = bucketstore.ETemporaryFailure
 	default:                                 err = bucketstore.EDiskFailure
 	}
 	

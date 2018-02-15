@@ -123,6 +123,10 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 				ctx.Error("Object Already Exists",fasthttp.StatusConflict)
 				return
 			}
+			if err==bucketstore.ETemporaryFailure {
+				ctx.Error("Temporary Failure",statusTemporaryFailure)
+				return
+			}
 			if err!=nil {
 				ctx.Error("Disk Failure",fasthttp.StatusInsufficientStorage)
 				return
@@ -150,6 +154,10 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 			err = cli.Put(id.Bytes(), rdata[:overl], rdata[overl:bodyf], rdata[bodyf:], expire)
 			if err==bucketstore.EExists {
 				ctx.Error("Object Already Exists",fasthttp.StatusConflict)
+				return
+			}
+			if err==bucketstore.ETemporaryFailure {
+				ctx.Error("Temporary Failure",statusTemporaryFailure)
 				return
 			}
 			if err!=nil {
