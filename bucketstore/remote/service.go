@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Simon Schmidt
+Copyright (c) 2017-2018 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,8 @@ import "github.com/maxymania/fastnntp-polyglot/buffer"
 import "encoding/base64"
 import "sync/atomic"
 
+import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/degrader"
+
 const (
 	statusTemporaryFailure = 900+iota
 	statusDiskFailure
@@ -60,6 +62,7 @@ type BucketShare struct{
 	spcLeft  int64
 	Store    bucketstore.BucketStore
 	signaler chan int
+	degr     degrader.Degrader
 }
 const URLDate = "20060102150405"
 func NewBucketShare(s bucketstore.BucketStore) *BucketShare {

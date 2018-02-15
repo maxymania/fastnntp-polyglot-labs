@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Simon Schmidt
+Copyright (c) 2017-2018 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ import "github.com/maxymania/fastnntp-polyglot/buffer"
 import "github.com/maxymania/fastnntp-polyglot-labs/bufferex"
 import "github.com/maxymania/fastnntp-polyglot-labs/binarix"
 import "fmt"
-
+import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/degrader"
 
 type HttpClient interface{
 	DoDeadline(req *fasthttp.Request, resp *fasthttp.Response, deadline time.Time) error
@@ -43,9 +43,10 @@ func required(req *fasthttp.Request) {
 type Client struct{
 	client HttpClient
 	uuid   []byte
+	degr   degrader.Degrader
 }
 func NewClient(c HttpClient, uuid []byte) *Client {
-	return &Client{c,uuid}
+	return &Client{c,uuid,degrader.Degrader{}}
 }
 
 func (c *Client) setUrl(req *fasthttp.Request, id []byte, date []byte) {
@@ -234,19 +235,19 @@ func (m *MultiClient) Submit(id, overv, head, body []byte, expire time.Time) (bu
 	return
 }
 func (m *MultiClient) OverPut(bucket []byte, id, overv, head, body []byte, expire time.Time) error {
-	c := Client{m.client,bucket}
+	c := Client{m.client,bucket,degrader.Degrader{}}
 	return c.Put(id,overv,head,body,expire)
 }
 func (m *MultiClient) OverGet(bucket []byte, id []byte, overv, head, body *bufferex.Binary) (ok bool,e error) {
-	c := Client{m.client,bucket}
+	c := Client{m.client,bucket,degrader.Degrader{}}
 	return c.Get(id,overv,head,body)
 }
 func (m *MultiClient) OverExpire(bucket []byte, expire time.Time) error {
-	c := Client{m.client,bucket}
+	c := Client{m.client,bucket,degrader.Degrader{}}
 	return c.Expire(expire)
 }
 func (m *MultiClient) OverFreeStorage(bucket []byte) (int64,error) {
-	c := Client{m.client,bucket}
+	c := Client{m.client,bucket,degrader.Degrader{}}
 	return c.FreeStorage()
 }
 

@@ -153,6 +153,7 @@ func (d *DayfileIndex) Put(id, overv, head, body []byte, expire time.Time) error
 		
 		if len(idx.Get(id))!=0 { e2 = bucketstore.EExists ; return nil }
 		
+		restart:
 		copy(ibuf[:],fSz.Get(dayid[:]))
 		lng := int64(bE.Uint64(ibuf[:]))
 		
@@ -160,9 +161,10 @@ func (d *DayfileIndex) Put(id, overv, head, body []byte, expire time.Time) error
 		if (chunk_all+lng) > d.maxfz {
 			dayid = dayid.incr()
 			if dayid.overfl() {
-				e2 = bucketstore.EOutOfStorage /* TODO find a better error code */
+				e2 = bucketstore.ETemporaryFailure
 				return nil
 			}
+			goto restart
 		}
 		
 		pos := Position{struct{}{},dayid,lng,len(overv),len(head),len(body)}

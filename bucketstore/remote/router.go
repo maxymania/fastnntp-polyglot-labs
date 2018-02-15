@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Simon Schmidt
+Copyright (c) 2017-2018 Simon Schmidt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ import "github.com/valyala/fasthttp"
 import "github.com/maxymania/fastnntp-polyglot-labs/binarix"
 import "time"
 
+import "github.com/maxymania/fastnntp-polyglot-labs/bucketstore/degrader"
 
 type BucketRouter struct{
 	locals  map[string]*BucketShare
@@ -37,6 +38,7 @@ type BucketRouter struct{
 	remlock sync.Mutex
 	uuids   []string
 	postick int
+	Dmd     *degrader.DegraderMetadata
 }
 func NewBucketRouter() *BucketRouter {
 	return &BucketRouter{
@@ -46,21 +48,23 @@ func NewBucketRouter() *BucketRouter {
 }
 func (b *BucketRouter) AddLocal(bu *bucketstore.Bucket) {
 	if _,ok := b.locals[bu.Uuid] ; ok { return }
-	b.locals[bu.Uuid] = NewBucketShare(bu.Store)
+	bush := NewBucketShare(bu.Store)
+	bush.degr.Dmd = b.Dmd
+	b.locals[bu.Uuid] = bush
 	b.uuids = append(b.uuids,bu.Uuid)
 }
 func (b *BucketRouter) AddNode(names [][]byte,cli HttpClient) {
 	b.remlock.Lock(); defer b.remlock.Unlock()
 	for _,name := range names {
 		sn := string(name)
-		b.remotes[sn] = &Client{cli,name}
+		b.remotes[sn] = &Client{cli,name,degrader.Degrader{Dmd:b.Dmd}}
 		b.uuids = append(b.uuids,sn)
 	}
 }
 func (b *BucketRouter) AddNode2(names []string,cli HttpClient) {
 	b.remlock.Lock(); defer b.remlock.Unlock()
 	for _,sn := range names {
-		b.remotes[sn] = &Client{cli,[]byte(sn)}
+		b.remotes[sn] = &Client{cli,[]byte(sn),degrader.Degrader{Dmd:b.Dmd}}
 		b.uuids = append(b.uuids,sn)
 	}
 }
@@ -112,6 +116,9 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 	
 		if lc := b.locals[uuid] ; lc!=nil {
 			
+			/* Check, if our bucket had a failure recently. */
+			if lc.degr.Damaged() { continue }
+			
 			/* Check Length. We must not exceed the available storage space. */
 			lng := atomic.LoadInt64(&lc.spcLeft)
 			if lng<(overl+headl+bodyl) {
@@ -124,16 +131,17 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 				return
 			}
 			if err==bucketstore.EOutOfStorage {
-				ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
-				return
+				/* Out of storage: set the Out of Storage variable to ZERO. */
+				atomic.StoreInt64(&lc.spcLeft,0)
+				continue
 			}
 			if err==bucketstore.ETemporaryFailure {
-				ctx.Error("Temporary Failure",statusTemporaryFailure)
-				return
+				lc.degr.ForceFail()
+				continue
 			}
 			if err!=nil {
-				ctx.Error("Disk Failure",statusDiskFailure)
-				return
+				lc.degr.Fail()
+				continue
 			}
 			atomic.AddInt64(&lc.spcLeft,overl+headl+bodyl) // inaccurate update.
 			
@@ -149,8 +157,15 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 		b.remlock.Unlock()
 		
 		if cli!=nil {
+			/* Check, if our bucket had a failure recently. */
+			if cli.degr.Damaged() { continue }
+			
 			lng,err := cli.FreeStorage()
-			if err!=nil { continue } // Unreachable
+			if err!=nil { // Unreachable
+				cli.degr.Fail()
+				continue
+			}
+			
 			if lng<(overl+headl+bodyl) {
 				continue
 			}
@@ -161,16 +176,17 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 				return
 			}
 			if err==bucketstore.EOutOfStorage {
-				ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
-				return
+				/* We augment Out Of Storage errors by telling the degrader "broken". */
+				cli.degr.ForceFail()
+				continue
 			}
 			if err==bucketstore.ETemporaryFailure {
-				ctx.Error("Temporary Failure",statusTemporaryFailure)
-				return
+				cli.degr.ForceFail()
+				continue
 			}
 			if err!=nil {
-				ctx.Error("Disk Failure",statusDiskFailure)
-				return
+				cli.degr.Fail()
+				continue
 			}
 			
 			ctx.SetStatusCode(fasthttp.StatusCreated)
