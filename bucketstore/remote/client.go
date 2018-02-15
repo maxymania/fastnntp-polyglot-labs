@@ -115,6 +115,9 @@ func (c *Client) Get(id []byte, overv, head, body *bufferex.Binary) (ok bool,err
 	
 	if err!=nil { return }
 	
+	fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	
 	overl := binarix.Atoi(resp.Header.Peek("X-Over"))
 	headl := binarix.Atoi(resp.Header.Peek("X-Head"))
 	bodyl := binarix.Atoi(resp.Header.Peek("X-Body"))
