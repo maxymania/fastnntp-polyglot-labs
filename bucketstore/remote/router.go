@@ -123,12 +123,16 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 				ctx.Error("Object Already Exists",fasthttp.StatusConflict)
 				return
 			}
+			if err==bucketstore.EOutOfStorage {
+				ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
+				return
+			}
 			if err==bucketstore.ETemporaryFailure {
 				ctx.Error("Temporary Failure",statusTemporaryFailure)
 				return
 			}
 			if err!=nil {
-				ctx.Error("Disk Failure",fasthttp.StatusInsufficientStorage)
+				ctx.Error("Disk Failure",statusDiskFailure)
 				return
 			}
 			atomic.AddInt64(&lc.spcLeft,overl+headl+bodyl) // inaccurate update.
@@ -156,12 +160,16 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 				ctx.Error("Object Already Exists",fasthttp.StatusConflict)
 				return
 			}
+			if err==bucketstore.EOutOfStorage {
+				ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
+				return
+			}
 			if err==bucketstore.ETemporaryFailure {
 				ctx.Error("Temporary Failure",statusTemporaryFailure)
 				return
 			}
 			if err!=nil {
-				ctx.Error("Disk Failure",fasthttp.StatusInsufficientStorage)
+				ctx.Error("Disk Failure",statusDiskFailure)
 				return
 			}
 			
@@ -171,7 +179,10 @@ func (b *BucketRouter) apiSubmit(path binarix.Iterator,ctx *fasthttp.RequestCtx)
 		}
 	}
 	
-	ctx.Error("404 No such Bucket!",fasthttp.StatusNotFound)
+	/*
+	 * If we looped through all Nodes and then determined, that no one fits: Out of Storage.
+	 */
+	ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
 	return
 }
 func (b *BucketRouter) Handler(ctx *fasthttp.RequestCtx) {

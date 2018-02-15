@@ -36,6 +36,7 @@ import "sync/atomic"
 
 const (
 	statusTemporaryFailure = 900+iota
+	statusDiskFailure
 )
 
 var codec = base64.RawURLEncoding
@@ -140,12 +141,16 @@ func (b *BucketShare) Handler(ctx *fasthttp.RequestCtx) {
 			ctx.Error("Object Already Exists",fasthttp.StatusConflict)
 			return
 		}
+		if err==bucketstore.EOutOfStorage {
+			ctx.Error("Insufficient Storage",fasthttp.StatusInsufficientStorage)
+			return
+		}
 		if err==bucketstore.ETemporaryFailure {
 			ctx.Error("Temporary Failure",statusTemporaryFailure)
 			return
 		}
 		if err!=nil {
-			ctx.Error("Disk Failure",fasthttp.StatusInsufficientStorage)
+			ctx.Error("Disk Failure",statusDiskFailure)
 			return
 		}
 		
