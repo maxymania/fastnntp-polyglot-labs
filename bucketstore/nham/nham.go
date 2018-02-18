@@ -22,3 +22,5 @@ SOFTWARE.
 
 // Nail-House Allocation Method.
 package nham
+
+var bktNhcfg = []byte("nhcfg")

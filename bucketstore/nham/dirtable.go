@@ -33,11 +33,11 @@ var EAppendDenied = errors.New("Append Denied")
 
 var bktNHIndex = []byte("nhindex")
 var bktDirTable = []byte("dirtable")
+var cfgDirActive = []byte("diractive")
 
 type FileMetadata struct{
 	_msgpack struct{} `msgpack:",asArray"`
 	NailHouse int
-	Sealed    bool
 }
 
 var DENIED AppendChecker = func(totalFilesize int64) error { return EAppendDenied }
@@ -45,14 +45,26 @@ var DENIED AppendChecker = func(totalFilesize int64) error { return EAppendDenie
 type DirTable struct{
 	Rnd rand.Source
 	MinForwardDays int
+	MinTimeBuffer  int
 }
 
+func (dt *DirTable) getActive(tx *bolt.Tx) (fid FileID,found bool){
+	if bkt := tx.Bucket(bktNhcfg); bkt!=nil {
+		v := bkt.Get(cfgDirActive)
+		if len(v) == len(fid) { copy(fid[:],v); found = true }
+	}
+	return 
+}
+func (dt *DirTable) setActive(tx *bolt.Tx, fid FileID) error {
+	bkt,err := tx.CreateBucketIfNotExists(bktNhcfg)
+	if err!=nil { return err }
+	return bkt.Put(cfgDirActive,fid[:])
+}
 func (dt *DirTable) Alloc(tx *bolt.Tx,size int64, timeNail int,checker AppendChecker) (fid FileID, fileOffset int64, e error) {
 	var pref [4]byte
 	var lfid FileID
 	var fm FileMetadata
 	var verr error
-	var nonSealed []FileID
 	
 	idx,err := tx.CreateBucketIfNotExists(bktNHIndex)
 	if err!=nil { e = err; return }
@@ -64,6 +76,8 @@ func (dt *DirTable) Alloc(tx *bolt.Tx,size int64, timeNail int,checker AppendChe
 	
 	bE.PutUint32(pref[:],uint32(timeNail))
 	
+	active, hasActive := dt.getActive(tx)
+	
 	for k,v := cur.Seek(pref[:]) ; len(k)>4; k,v = cur.Next() {
 		copy(lfid[:],v)
 		obj := tab.Get(lfid[:])
@@ -72,14 +86,18 @@ func (dt *DirTable) Alloc(tx *bolt.Tx,size int64, timeNail int,checker AppendChe
 		
 		lchk := checker
 		
-		if fm.Sealed { lchk = DENIED } /* Append is strictly denied. */
+		isSealed := true
+		
+		if hasActive {
+			isSealed = !active.Equal(lfid)
+		}
+		
+		if isSealed { lchk = DENIED } /* Append is strictly denied. */
 		
 		copy(lfid[:],v)
 		fileOffset,verr,err = FileTableInsert(tx,lfid,size,timeNail,lchk)
 		if err!=nil { continue }
 		if verr!=nil {
-			/* Remember the non-sealed. */
-			if !fm.Sealed { nonSealed = append(nonSealed,lfid) }
 			continue
 		}
 		fid = lfid
@@ -92,12 +110,16 @@ func (dt *DirTable) Alloc(tx *bolt.Tx,size int64, timeNail int,checker AppendChe
 		break
 	}
 	
+	err = dt.setActive(tx,lfid)
+	if err!=nil { e = err; return }
+	
 	limit1 := 0
 	limit2 := 0
 	if k,_ := cur.Last(); len(k)>=4 { limit1 = int(bE.Uint32(k)) }
-	if dt.MinForwardDays!=0 { limit2 = deTime(time.Now().UTC().AddDate(0,0,dt.MinForwardDays)) }
+	if dt.MinForwardDays>=0 { limit2 = deTime(time.Now().UTC().AddDate(0,0,dt.MinForwardDays)) }
 	
 	newNailHouse := timeNail
+	if dt.MinTimeBuffer>=0 { newNailHouse = deTime(enTime(newNailHouse).AddDate(0,0,dt.MinTimeBuffer)) }
 	if newNailHouse<limit1 { newNailHouse = limit1 }
 	if newNailHouse<limit2 { newNailHouse = limit2 }
 	
@@ -110,7 +132,6 @@ func (dt *DirTable) Alloc(tx *bolt.Tx,size int64, timeNail int,checker AppendChe
 	if err!=nil { e = err; return }
 	
 	fm.NailHouse = newNailHouse
-	fm.Sealed = false
 	obj,_ := msgpack.Marshal(&fm)
 	err = tab.Put(lfid[:],obj)
 	if err!=nil { e = err; return }
