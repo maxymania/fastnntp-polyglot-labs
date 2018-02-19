@@ -29,6 +29,11 @@ import "encoding/binary"
 import "encoding/hex"
 import "github.com/maxymania/fastnntp-polyglot-labs/file"
 
+/* Temporary. */
+func TimeToInt(t time.Time) int {
+	return deTime(t)
+}
+
 func deTime(t time.Time) int{
 	y,m,d := t.Date()
 	return (y<<16)|(int(m)<<8)|d
@@ -50,6 +55,13 @@ func safe_u64(b []byte) uint64 {
 }
 
 type FileID [16]byte
+func (a FileID) Equal(b FileID) bool {
+	for i := range a {
+		if a[i]!=b[i] { return false }
+	}
+	return true
+}
+
 func NewFileId(src rand.Source) (f FileID) {
 	var d [8]byte
 	x := uint64(src.Int63())
