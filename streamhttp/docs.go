@@ -21,6 +21,8 @@ SOFTWARE.
 */
 
 /*
+Deprecated: Considered cruft right now.
+
 HTTP over StreamProto over KCP-Go.
 
 This package has some subtle bugs and resource leaks, and is not considered Stable right now.
