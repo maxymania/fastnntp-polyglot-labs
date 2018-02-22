@@ -28,6 +28,8 @@ import "text/template"
 import "bytes"
 import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
 
+import "github.com/maxymania/fastnntp-polyglot/postauth"
+
 type AuthRank uint8
 const (
 	ARReader AuthRank = iota
@@ -163,18 +165,39 @@ func (b *AuthBase) GroupHeadFilter(groups [][]byte) ([][]byte, error) {
 	return groups[:i],nil
 }
 
-func (b *Base) GroupAdmPutDescr(group []byte, descr []byte) {
-	b.AdmPutDescr(group,descr)
-}
-func (b *Base) GroupAdmPutStatus(group []byte, status byte) {
-	b.AdmPutStatus(group,status)
+func (b *Base) GroupHeadFilterWithAuth(rank postauth.AuthRank,groups [][]byte) ([][]byte,error) {
+	var status byte
+	stm,err := b.DB.Prepare(`
+	SELECT
+		n.status
+	FROM
+		ngrpcnt n
+	WHERE
+		n.ngrp = $1
+	;`)
+	if err!=nil { return nil,err }
+	defer stm.Close()
+	i := 0
+	for _,group := range groups {
+		row := stm.QueryRow(group)
+		ok := false
+		err := row.Scan(&status)
+		if err!=nil { continue }
+		ok = rank.TestStatus(status)
+		if ok {
+			groups[i] = group
+			i++
+		}
+	}
+	
+	return groups[:i],nil
 }
 
-func (b *Base) AdmPutDescr(group []byte, descr []byte) {
+func (b *Base) GroupAdmPutDescr(group []byte, descr []byte) {
 	_,err := b.DB.Exec(`INSERT INTO ngrpstatic (ngrp,descr) VALUES ($1,$2);`,group,descr)
 	if err!=nil { b.DB.Exec(`UPDATE ngrpstatic SET descr=$1 WHERE ngrp=$2;`     ,descr,group) }
 }
-func (b *Base) AdmPutStatus(group []byte, status byte) {
+func (b *Base) GroupAdmPutStatus(group []byte, status byte) {
 	_,err := b.DB.Exec(`INSERT INTO ngrpcnt (ngrp,latest,status) VALUES ($1,0,$2);`,group,int(status))
 	if err!=nil { b.DB.Exec(`UPDATE ngrpcnt SET status=$1 WHERE ngrp=$2;`,int(status),group) }
 }
