@@ -23,7 +23,7 @@ SOFTWARE.
 
 package groupadm
 
-type GroupAdm struct{
+type GroupAdm interface{
 	GroupAdmPutDescr(group []byte, descr []byte)
 	GroupAdmPutStatus(group []byte, status byte)
 }
