@@ -26,6 +26,7 @@ package semigroupdb
 import "database/sql"
 import "text/template"
 import "bytes"
+import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
 
 type AuthRank uint8
 const (
@@ -107,6 +108,12 @@ type PgBase struct{
 	Base
 }
 
+func (b *Base) CreateSqlModel(d *sqlutil.Dialect) error {
+	buf := new(bytes.Buffer)
+	createTables.Execute(buf, d)
+	_,err := b.DB.Exec(buf.String())
+	return err
+}
 func (b *Base) CreateTables(d *Dialect) error {
 	buf := new(bytes.Buffer)
 	createTables.Execute(buf, d)
@@ -155,6 +162,14 @@ func (b *AuthBase) GroupHeadFilter(groups [][]byte) ([][]byte, error) {
 	
 	return groups[:i],nil
 }
+
+func (b *Base) GroupAdmPutDescr(group []byte, descr []byte) {
+	b.AdmPutDescr(group,descr)
+}
+func (b *Base) GroupAdmPutStatus(group []byte, status byte) {
+	b.AdmPutStatus(group,status)
+}
+
 func (b *Base) AdmPutDescr(group []byte, descr []byte) {
 	_,err := b.DB.Exec(`INSERT INTO ngrpstatic (ngrp,descr) VALUES ($1,$2);`,group,descr)
 	if err!=nil { b.DB.Exec(`UPDATE ngrpstatic SET descr=$1 WHERE ngrp=$2;`     ,descr,group) }

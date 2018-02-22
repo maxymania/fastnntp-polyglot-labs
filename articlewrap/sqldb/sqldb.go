@@ -28,6 +28,7 @@ import "text/template"
 import "bytes"
 import "time"
 import "github.com/maxymania/fastnntp-polyglot-labs/bufferex"
+import "github.com/maxymania/fastnntp-polyglot-labs/util/sqlutil"
 
 type Dialect struct{
 	Binary, Int64, Date string
@@ -65,6 +66,13 @@ var createTables = template.Must(template.New("create").Parse(`
 
 type Base struct{
 	DB *sql.DB
+}
+
+func (b *Base) CreateSqlModel(d *sqlutil.Dialect) error {
+	buf := new(bytes.Buffer)
+	createTables.Execute(buf, d)
+	_,err := b.DB.Exec(buf.String())
+	return err
 }
 func (b *Base) CreateTables(d *Dialect) error {
 	buf := new(bytes.Buffer)
