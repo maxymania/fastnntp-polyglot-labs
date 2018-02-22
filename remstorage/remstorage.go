@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
+/* Deprecated: Considered cruft right now. */
 package remstorage
 
 import "github.com/maxymania/fastnntp-polyglot-labs/binarix"
