@@ -89,7 +89,7 @@ func (adb *ArticleDirectBackend) ArticleDirectOverview(id []byte) *newspolyglot.
 	defer bov.Free()
 	if e!=nil || !ok { return nil }
 	
-	obj := new(newspolyglot.ArticleOverview)
+	obj := newspolyglot.AcquireArticleOverview()
 	e = zunmarshal(
 		 bov.Bytes(),
 		&obj.Subject,
@@ -126,7 +126,7 @@ func (adb *ArticleDirectBackend) ArticleGroupGet (group []byte, num int64, head,
 	if e!=nil || !ok {
 		return nil,nil
 	}
-	obj := new(newspolyglot.ArticleObject)
+	obj := newspolyglot.AcquireArticleObject()
 	if head {
 		obj.Bufs[0],obj.Head,e = zdecode(bhead.Bytes())
 		if e!=nil { return nil,nil }
@@ -148,6 +148,7 @@ func (adb *ArticleDirectBackend) ArticleGroupMove(group []byte, i int64, backwar
 }
 func (adb *ArticleDirectBackend) ArticleGroupOverview(group []byte, first, last int64, targ func(int64, *newspolyglot.ArticleOverview)) {
 	var obj, bak newspolyglot.ArticleOverview
+	// XXX Memory allocation of obj and bak.
 	read := []interface{}{
 		&obj.Subject,
 		&obj.From,
@@ -189,7 +190,7 @@ func (adb *ArticleDirectBackend) ArticleGroupList(group []byte, first, last int6
 }
 //
 func (adb *ArticleDirectBackend) ArticlePostingPost(headp *posting.HeadInfo, body []byte, ngs [][]byte, numbs []int64) (rejected bool, failed bool, err error) {
-	ao := new(newspolyglot.ArticleOverview)
+	var ao newspolyglot.ArticleOverview
 	ao.Subject = headp.Subject
 	ao.From    = headp.From
 	ao.Date    = headp.Date
