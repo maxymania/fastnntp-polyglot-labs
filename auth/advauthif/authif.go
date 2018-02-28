@@ -28,7 +28,7 @@ import "github.com/maxymania/fastnntp-polyglot/postauth"
 import "github.com/maxymania/fastnntp-polyglot-labs/auth/advauth"
 import "github.com/maxymania/fastnntp-polyglot/caps"
 
-func ExtractGhead(c *caps.Caps) (gh *postauth.GroupHeadCacheWithAuth) {
+func ExtractGhead(c *caps.Caps) (gh postauth.GroupHeadCacheWithAuth) {
 	if gc,ok := c.GroupHeadCache.(*postauth.GroupHeadCacheAuthed) ; ok { gh = gc.Base }
 	return
 }
