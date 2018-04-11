@@ -68,7 +68,7 @@ func (adb *ArticleDirectBackend) ArticleDirectGet(id []byte, head, body bool) *n
 	if e!=nil || !ok {
 		return nil
 	}
-	obj := new(newspolyglot.ArticleObject)
+	obj := newspolyglot.AcquireArticleObject()
 	if head {
 		obj.Bufs[0],obj.Head,e = zdecode(bhead.Bytes())
 		if e!=nil { return nil }

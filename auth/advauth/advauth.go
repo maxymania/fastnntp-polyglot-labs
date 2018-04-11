@@ -76,7 +76,7 @@ func (a *Auther) getFor(r postauth.AuthRank) *fastnntp.Handler {
 	if ptr!=NULL { return (*fastnntp.Handler)(ptr) }
 	h := a.Deriv.DeriveRank(a.Base,r)
 	if h==nil { panic("Invalid behavoir: a.Deriv.DeriveRank returned <nil>") }
-	h.LoginCaps = &a.backl[0]
+	h.LoginCaps = &a.backl[r]
 	ptr = unsafe.Pointer(h)
 	atomic.CompareAndSwapPointer(&a.array[r],NULL,ptr)
 	return h
